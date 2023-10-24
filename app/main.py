@@ -30,19 +30,38 @@ else:
     df = df_original.copy()
     df['corrected_comment'] = None
 
+# Initialize the sentence index
+if 'sentence_index' not in st.session_state:
+    st.session_state.sentence_index = 0
+
 # Display sentence numbers along with correction status for selection
 sentence_numbers = [f"{num + 1} - {'Corrected' if not pd.isna(df.iloc[num]['corrected_comment']) else 'Not Corrected'}" for num in range(len(df))]
 
 # Sidebar selector for sentence number
-selected_sentence_number = st.sidebar.selectbox("Select the sentence number:", sentence_numbers)
+selected_sentence_number = st.sidebar.selectbox("Select the sentence number:", sentence_numbers, index=st.session_state.sentence_index)
 
 # Extract the sentence number from the selected option
 selected_sentence_number = int(selected_sentence_number.split(" - ")[0])
 
-# Determine the index based on the selected sentence number
-index = selected_sentence_number - 1
+# Update the sentence index based on the selected sentence number
+st.session_state.sentence_index = selected_sentence_number - 1  # Adjust for zero-based indexing
 
-# Display the image corresponding to the selected sentence
+# Handle "Next" and "Previous" button clicks
+if st.sidebar.button("Previous") and st.session_state.sentence_index > 0:
+    st.session_state.sentence_index -= 1
+elif st.sidebar.button("Next") and st.session_state.sentence_index < len(df) - 1:
+    st.session_state.sentence_index += 1
+
+# Determine the index based on the sentence number or "Next"/"Previous" buttons
+index = st.session_state.sentence_index
+
+# Determine the total number of images
+total_images = len(df)
+
+# Display the image number and total number of images
+st.write(f"Picture {index + 1} out of {total_images}")
+
+# Display the image
 st.image(os.path.join('/Users/erdnbt/Projects/Research/flickr30k_images/flickr_images', df.iloc[index]['image_name'].strip()))
 
 # Displaying the original caption
@@ -54,7 +73,6 @@ if 'Translated Comment' in df.columns:
 else:
     machine_translation = ""
 
-# Display machine translation
 st.write(f"Machine Translation: {machine_translation}")
 
 # Displaying the corrected translation if it exists
